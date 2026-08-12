@@ -1,0 +1,147 @@
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@import "@fontsource/instrument-serif/400.css";
+@import "@fontsource/instrument-serif/400-italic.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 85%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 170 15% 45%;
+    --accent-foreground: 0 0% 100%;
+    --border: 0 0% 20%;
+    --input: 0 0% 18%;
+    --ring: 0 0% 40%;
+    --hero-subtitle: 210 17% 95%;
+    --radius: 0.75rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    @apply bg-foreground text-background;
+  }
+}
+
+/* ---- Liquid glass (from the hero design system) ---- */
+.liquid-glass {
+  background: rgba(255, 255, 255, 0.01);
+  background-blend-mode: luminosity;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: none;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.liquid-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.15) 20%,
+    rgba(255, 255, 255, 0) 40%,
+    rgba(255, 255, 255, 0) 60%,
+    rgba(255, 255, 255, 0.15) 80%,
+    rgba(255, 255, 255, 0.45) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ---- Graveyard surfaces ---- */
+.wood-grain {
+  background-image: repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.045) 0px,
+      rgba(255, 255, 255, 0.045) 1px,
+      transparent 1px,
+      transparent 5px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.5) 0px,
+      rgba(0, 0, 0, 0.5) 2px,
+      transparent 2px,
+      transparent 23px
+    ),
+    linear-gradient(160deg, hsl(0 0% 11%) 0%, hsl(0 0% 6%) 50%, hsl(0 0% 3%) 100%);
+}
+
+.wood-grain-old {
+  background-image: repeating-linear-gradient(
+      88deg,
+      rgba(255, 255, 255, 0.03) 0px,
+      rgba(255, 255, 255, 0.03) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    repeating-linear-gradient(
+      92deg,
+      rgba(0, 0, 0, 0.65) 0px,
+      rgba(0, 0, 0, 0.65) 3px,
+      transparent 3px,
+      transparent 17px
+    ),
+    linear-gradient(160deg, hsl(0 0% 8%) 0%, hsl(0 0% 4%) 60%, hsl(0 0% 2%) 100%);
+}
+
+.engrave {
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.08), 0 -1px 1px rgba(0, 0, 0, 0.9);
+}
+
+.fog {
+  background: radial-gradient(
+      60% 40% at 50% 100%,
+      rgba(255, 255, 255, 0.06) 0%,
+      transparent 70%
+    ),
+    radial-gradient(45% 30% at 15% 90%, rgba(255, 255, 255, 0.04) 0%, transparent 70%),
+    radial-gradient(45% 30% at 85% 85%, rgba(255, 255, 255, 0.035) 0%, transparent 70%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .animate-drift,
+  .animate-flicker,
+  .animate-ash {
+    animation: none !important;
+  }
+  .animate-ash {
+    display: none;
+  }
+}
