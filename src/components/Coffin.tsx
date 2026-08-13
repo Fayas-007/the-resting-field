@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useState } from "react";
 import type { Project } from "../data/projects";
 import { cn } from "../lib/utils";
@@ -16,13 +16,25 @@ interface CoffinProps {
 
 export default function Coffin({ project, weathered = false, index = 0 }: CoffinProps) {
   const [open, setOpen] = useState(false);
+  /*
+    The reduced-motion block in index.css only silences the CSS keyframe
+    animations (.animate-drift and friends) — it has no reach into Framer's
+    transforms, so the lid swing and the entrance slide have to opt out here.
+    Duration 0 rather than removing the animation: the lid still needs to
+    *arrive* at its open/closed angle, just without travelling there.
+  */
+  const reduced = useReducedMotion();
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 28 }}
+      initial={reduced ? false : { opacity: 0, y: 28 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.6, delay: (index % 4) * 0.08, ease: "easeOut" }}
+      transition={
+        reduced
+          ? { duration: 0 }
+          : { duration: 0.6, delay: (index % 4) * 0.08, ease: "easeOut" }
+      }
     >
       {/*
         A div rather than a <button>: this coffin now holds a FlagButton (and
@@ -61,7 +73,9 @@ export default function Coffin({ project, weathered = false, index = 0 }: Coffin
 
           <motion.div
             animate={{ opacity: open ? 1 : 0 }}
-            transition={{ duration: 0.35, delay: open ? 0.28 : 0 }}
+            transition={
+              reduced ? { duration: 0 } : { duration: 0.35, delay: open ? 0.28 : 0 }
+            }
             className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 px-[14%] py-[16%] text-center"
           >
             <h3 className="text-sm font-semibold leading-snug text-card-foreground">
@@ -102,7 +116,9 @@ export default function Coffin({ project, weathered = false, index = 0 }: Coffin
           {/* ---- Lid ---- */}
           <motion.div
             animate={{ rotateX: open ? -104 : 0 }}
-            transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
+            transition={
+              reduced ? { duration: 0 } : { duration: 0.75, ease: [0.22, 1, 0.36, 1] }
+            }
             className="absolute inset-0"
             style={{ transformOrigin: "top center", transformStyle: "preserve-3d" }}
           >

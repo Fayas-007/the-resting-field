@@ -40,10 +40,23 @@ export default function Plot({
       <div className="relative z-10">
         <SectionIntro eyebrow={eyebrow} heading={heading} subtext={subtext} />
 
-        {/* One coffin per row on phones — the record needs the width to stay readable. */}
-        <div className="mx-auto mt-20 grid max-w-[300px] grid-cols-1 gap-x-6 gap-y-14 sm:max-w-6xl sm:grid-cols-2 sm:gap-x-10 md:grid-cols-3 lg:grid-cols-4 lg:gap-x-12">
+        {/*
+          Flex-wrap rather than a grid: section counts vary (Old Ground has 3
+          caskets, the Main Path 5, and both grow as live submissions are
+          approved), so a fixed 4-track grid leaves a trailing empty column
+          that shifts a short row off the section's centre axis. Wrapping flex
+          items centre every row, full or partial. Widths below reproduce the
+          old track sizes exactly: (100% - totalGap) / columns.
+          One coffin per row on phones — the record needs the width to stay readable.
+        */}
+        <div className="mx-auto mt-20 flex max-w-[300px] flex-wrap justify-center gap-x-6 gap-y-14 sm:max-w-6xl sm:gap-x-10 lg:gap-x-12">
           {projects.map((project, i) => (
-            <Card key={project.id} project={project} weathered={weathered} index={i} />
+            <div
+              key={project.id}
+              className="w-full sm:w-[calc((100%-2.5rem)/2)] md:w-[calc((100%-5rem)/3)] lg:w-[calc((100%-9rem)/4)]"
+            >
+              <Card project={project} weathered={weathered} index={i} />
+            </div>
           ))}
         </div>
       </div>

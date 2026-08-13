@@ -3,8 +3,10 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import type { Submission } from "../lib/submissions";
 
+// text-base on small screens: iOS Safari force-zooms the page when a focused
+// input's font-size is under 16px.
 const fieldClass =
-  "w-full rounded-lg bg-input/60 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none ring-1 ring-inset ring-border/60 transition focus:ring-ring";
+  "w-full rounded-lg bg-input/60 px-4 py-3 text-base md:text-sm text-foreground placeholder:text-muted-foreground/60 outline-none ring-1 ring-inset ring-border/60 transition focus:ring-ring";
 
 /** Not configured at all — no point rendering a login form that can't work. */
 function Unconfigured() {
@@ -277,7 +279,7 @@ function Section({
                 key={row.id}
                 className="rounded-xl bg-card/60 p-5 ring-1 ring-inset ring-border/40"
               >
-                <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <p className="font-semibold text-card-foreground">{row.name}</p>
                     <p className="mt-1 font-serif text-base italic text-secondary-foreground">
@@ -309,7 +311,7 @@ function Section({
                     </p>
                   </div>
 
-                  <div className="flex shrink-0 flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 sm:shrink-0">
                     {onApprove && (
                       <ActionButton busy={busy} onClick={() => onApprove(row.id)} tone="primary">
                         Approve
@@ -360,7 +362,7 @@ function ActionButton({
       onClick={onClick}
       disabled={busy}
       className={
-        "rounded-full px-4 py-1.5 text-[11px] font-semibold tracking-[1px] transition-opacity disabled:opacity-40 " +
+        "min-h-[44px] rounded-full px-5 py-1.5 text-[11px] font-semibold tracking-[1px] transition-opacity disabled:opacity-40 sm:min-h-0 sm:px-4 " +
         (tone === "primary"
           ? "bg-foreground text-background hover:opacity-85"
           : tone === "danger"

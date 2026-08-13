@@ -19,8 +19,10 @@ const EMPTY = {
   website: "", // honeypot — real visitors never see or fill this
 };
 
+// text-base on small screens: iOS Safari force-zooms the page when a focused
+// input's font-size is under 16px.
 const fieldClass =
-  "w-full rounded-lg bg-input/60 px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/60 outline-none ring-1 ring-inset ring-border/60 transition focus:ring-ring";
+  "w-full rounded-lg bg-input/60 px-4 py-3 text-base md:text-sm text-foreground placeholder:text-muted-foreground/60 outline-none ring-1 ring-inset ring-border/60 transition focus:ring-ring";
 
 const labelClass = "block text-xs uppercase tracking-[2px] text-muted-foreground";
 
