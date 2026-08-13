@@ -26,7 +26,12 @@ const fieldClass =
 
 const labelClass = "block text-xs uppercase tracking-[2px] text-muted-foreground";
 
-type Status = "idle" | "submitting" | "success" | "error";
+/*
+  `notice` is separate from `error` on purpose. Hitting the daily limit isn't
+  a rejection — the earlier submissions were accepted and are queued for
+  review — so it shouldn't be dressed in red or announced as an alert.
+*/
+type Status = "idle" | "submitting" | "success" | "notice" | "error";
 
 /** Mirrors the edge function's own checks, so most mistakes get caught before a round trip. */
 function validate(form: typeof EMPTY) {
@@ -57,7 +62,8 @@ function validate(form: typeof EMPTY) {
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
-  rate_limited: "Three burials a day is the limit here — try again tomorrow.",
+  rate_limited:
+    "That's three burials from here today — the ground needs a rest. Anything you've already sent is safely interred and waiting on a moderator; nothing was lost. Come back tomorrow to lay another.",
   turnstile_failed: "Verification didn't go through. Try the checkbox again.",
   invalid_json: "Something went wrong sending that. Try again.",
   server_error: "The ground rejected it — something failed on our end. Try again shortly.",
@@ -124,16 +130,37 @@ export default function BurialGround() {
         },
       });
 
-      if (error) throw error;
+      /*
+        supabase-js doesn't throw on a non-2xx reply — it hands back a
+        FunctionsHttpError whose `context` is the raw Response, with the
+        function's own JSON error code still inside the body. Rethrowing here
+        would collapse every server-side rejection (rate_limited,
+        validation_failed, turnstile_failed) into the generic network message,
+        so the body gets read out first and only a genuinely unreadable
+        failure falls through to the catch.
+      */
+      let payload = data;
+      if (error) {
+        const res = (error as { context?: Response }).context;
+        if (res && typeof res.json === "function") {
+          try {
+            payload = await res.json();
+          } catch {
+            // Non-JSON body — nothing to recover, treat as a transport failure.
+          }
+        }
+        if (!payload) throw error;
+      }
 
-      if (!data?.ok) {
-        const code = typeof data?.error === "string" ? data.error : "server_error";
-        if (code === "validation_failed" && data.fields) {
-          setFieldErrors(data.fields);
+      if (!payload?.ok) {
+        const code = typeof payload?.error === "string" ? payload.error : "server_error";
+        if (code === "validation_failed" && payload.fields) {
+          setFieldErrors(payload.fields);
           setStatus("error");
           setStatusMessage("Fix the highlighted fields and try again.");
         } else {
-          setStatus("error");
+          // The daily cap means earlier submissions were accepted, not refused.
+          setStatus(code === "rate_limited" ? "notice" : "error");
           setStatusMessage(ERROR_MESSAGES[code] ?? ERROR_MESSAGES.server_error);
         }
         turnstileRef.current?.reset();
@@ -318,8 +345,12 @@ export default function BurialGround() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 role={status === "error" ? "alert" : "status"}
-                className={`mt-4 text-center text-sm ${
-                  status === "error" ? "text-red-400/90" : "text-muted-foreground"
+                className={`mt-4 text-center text-sm leading-relaxed ${
+                  status === "error"
+                    ? "text-red-400/90"
+                    : status === "notice"
+                      ? "text-secondary-foreground"
+                      : "text-muted-foreground"
                 }`}
               >
                 {statusMessage}
