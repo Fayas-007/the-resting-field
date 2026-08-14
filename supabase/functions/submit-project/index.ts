@@ -146,8 +146,13 @@ Deno.serve(async (req) => {
   if (!epitaph) errors.epitaph = "Give it an epitaph.";
   else if (epitaph.length > LIMITS.epitaph) errors.epitaph = `Keep it under ${LIMITS.epitaph} characters.`;
   if (stack.length > LIMITS.stack) errors.stack = `Keep it under ${LIMITS.stack} characters.`;
-  if (typeof payload.repo === "string" && payload.repo.trim() && !repoUrl) {
-    errors.repo = "That doesn't look like a valid http(s) URL.";
+  // Required, not optional: a burial with no repo leaves nothing to claim in
+  // the Resurrection Chamber, and nothing for a moderator to check against.
+  if (!repoUrl) {
+    errors.repo =
+      typeof payload.repo === "string" && payload.repo.trim()
+        ? "That doesn't look like a valid http(s) URL."
+        : "A repo URL is required.";
   }
 
   if (Object.keys(errors).length > 0) {

@@ -50,9 +50,14 @@ function validate(form: typeof EMPTY) {
     errors.stack = `Keep it under ${LIMITS.stack} characters.`;
   }
 
-  if (form.repo.trim()) {
+  const repo = form.repo.trim();
+  if (!repo) {
+    errors.repo = "A repo URL is required.";
+  } else if (repo.length > LIMITS.repo) {
+    errors.repo = `Keep it under ${LIMITS.repo} characters.`;
+  } else {
     try {
-      const u = new URL(form.repo.trim());
+      const u = new URL(repo);
       if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error("bad protocol");
     } catch {
       errors.repo = "That doesn't look like a valid http(s) URL.";
@@ -321,6 +326,7 @@ export default function BurialGround() {
                 id="bury-repo"
                 label="Repo URL"
                 type="url"
+                required
                 error={fieldErrors.repo}
                 value={form.repo}
                 onChange={set("repo")}
@@ -391,7 +397,7 @@ function Field({ label, error, id, ...rest }: FieldProps) {
         {...rest}
       />
       {error && (
-        <p id={`${id}-error`} role="alert" className="text-xs text-red-400/90">
+        <p id={`${id}-error`} role="alert" className="text-xs text-[hsl(var(--destructive-foreground))]">
           {error}
         </p>
       )}
