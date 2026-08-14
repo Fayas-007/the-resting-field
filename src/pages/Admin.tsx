@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import type { Submission } from "../lib/submissions";
+import { useToast } from "../components/Toast";
 
 // text-base on small screens: iOS Safari force-zooms the page when a focused
 // input's font-size is under 16px.
@@ -28,7 +29,7 @@ function Unconfigured() {
 function LoginGate({ onSignedIn }: { onSignedIn: (session: Session) => void }) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
-  const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
 
   useEffect(() => {
     if (!supabase) return;
@@ -42,7 +43,6 @@ function LoginGate({ onSignedIn }: { onSignedIn: (session: Session) => void }) {
     e.preventDefault();
     if (!supabase) return;
     setStatus("sending");
-    setError(null);
     try {
       const { error: signInError } = await supabase.auth.signInWithOtp({
         email: email.trim(),
@@ -53,7 +53,7 @@ function LoginGate({ onSignedIn }: { onSignedIn: (session: Session) => void }) {
     } catch (err) {
       console.error("magic link request failed", err);
       setStatus("error");
-      setError(err instanceof Error ? err.message : "Couldn't send the link. Try again.");
+      toast(err instanceof Error ? err.message : "Couldn't send the link. Try again.");
     }
   };
 
@@ -88,11 +88,6 @@ function LoginGate({ onSignedIn }: { onSignedIn: (session: Session) => void }) {
             >
               {status === "sending" ? "SENDING…" : "SEND SIGN-IN LINK"}
             </button>
-            {status === "error" && (
-              <p role="alert" className="text-center text-xs text-red-400/90">
-                {error}
-              </p>
-            )}
           </form>
         )}
       </div>
@@ -106,6 +101,7 @@ function Queue({ session }: { session: Session }) {
   const [rows, setRows] = useState<Submission[] | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actioning, setActioning] = useState<ActionState>({});
+  const toast = useToast();
 
   const load = useCallback(async () => {
     if (!supabase) return;
@@ -115,10 +111,17 @@ function Queue({ session }: { session: Session }) {
       // `admins` — an empty, error-free result for a non-admin looks
       // identical to "no pending submissions", so we can't distinguish
       // "not an admin" from "all caught up" purely from this query.
+      //
+      // Every row, not just the ones needing attention. Filtering to
+      // "pending or flagged" here used to strand rows in states the UI
+      // could never reach again: an approved, unflagged project stayed
+      // live with no way to take it down, and a rejected one vanished
+      // permanently. Both then needed the Supabase dashboard. Fetching
+      // everything means each row lands in exactly one section below and
+      // every state has a way out.
       const { data, error } = await supabase
         .from("submissions")
         .select("*")
-        .or("status.eq.pending,flagged.eq.true")
         .order("created_at", { ascending: false })
         .returns<Submission[]>();
       if (error) throw error;
@@ -140,6 +143,7 @@ function Queue({ session }: { session: Session }) {
       if (action === "delete") {
         const { error } = await supabase.from("submissions").delete().eq("id", id);
         if (error) throw error;
+        setRows((prev) => prev?.filter((r) => r.id !== id) ?? prev);
       } else {
         const patch =
           action === "approve"
@@ -149,11 +153,17 @@ function Queue({ session }: { session: Session }) {
               : { flagged: false, flagged_at: null };
         const { error } = await supabase.from("submissions").update(patch).eq("id", id);
         if (error) throw error;
+        // Patch in place rather than drop the row: every status is now a
+        // section, so the row moves between them instead of leaving. Dropping
+        // it here would hide an approved project until the next reload.
+        setRows((prev) => prev?.map((r) => (r.id === id ? { ...r, ...patch } : r)) ?? prev);
       }
-      setRows((prev) => prev?.filter((r) => r.id !== id) ?? prev);
     } catch (err) {
       console.error(`admin action "${action}" failed`, err);
       setActioning((s) => ({ ...s, [id]: "error" }));
+      // Toast for attention, and the row keeps its own marker — a toast is
+      // gone in three seconds and can't say *which* row failed.
+      toast(`Couldn't ${action} that submission. Try again.`);
       return;
     }
     setActioning((s) => {
@@ -191,6 +201,8 @@ function Queue({ session }: { session: Session }) {
 
   const pending = rows.filter((r) => r.status === "pending");
   const flaggedLive = rows.filter((r) => r.status === "approved" && r.flagged);
+  const live = rows.filter((r) => r.status === "approved" && !r.flagged);
+  const takenDown = rows.filter((r) => r.status === "rejected");
 
   return (
     <main className="min-h-screen bg-background px-6 py-16 md:px-12 lg:px-20">
@@ -230,6 +242,39 @@ function Queue({ session }: { session: Session }) {
           onDelete={(id) => act(id, "delete")}
         />
 
+        {/*
+          Everything currently visible to the public and not reported. Nothing
+          here needs review — it exists so a live project can be taken down
+          without a trip to the Supabase dashboard. "Take down" is the
+          non-destructive option: it flips status to `rejected`, which pulls
+          the project off the site but keeps the row.
+        */}
+        <Section
+          title="Live projects"
+          empty="Nothing published yet."
+          rows={live}
+          actioning={actioning}
+          onReject={(id) => act(id, "reject")}
+          rejectLabel="Take down"
+          onDelete={(id) => act(id, "delete")}
+        />
+
+        {/*
+          Rejected rows: off the public site, but still here. Without this
+          section they would be unreachable from the UI entirely — the same
+          dead end the Live section above exists to prevent. "Restore" is
+          the plain approve action, which puts the project back on the site.
+        */}
+        <Section
+          title="Taken down"
+          empty="Nothing has been taken down."
+          rows={takenDown}
+          actioning={actioning}
+          onApprove={(id) => act(id, "approve")}
+          approveLabel="Restore"
+          onDelete={(id) => act(id, "delete")}
+        />
+
         {rows.length === 0 && (
           <p className="mt-10 text-center text-sm text-muted-foreground">
             Empty queue and not-an-admin look identical from here by design — RLS never tells the
@@ -248,7 +293,9 @@ function Section({
   rows,
   actioning,
   onApprove,
+  approveLabel = "Approve",
   onReject,
+  rejectLabel = "Reject",
   onUnflag,
   onDelete,
 }: {
@@ -257,7 +304,11 @@ function Section({
   rows: Submission[];
   actioning: ActionState;
   onApprove?: (id: string) => void;
+  /** "Approve" reads wrong for something already reviewed — see the Taken down section. */
+  approveLabel?: string;
   onReject?: (id: string) => void;
+  /** "Reject" reads wrong for something already published — see the Live section. */
+  rejectLabel?: string;
   onUnflag?: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
@@ -314,12 +365,12 @@ function Section({
                   <div className="flex flex-wrap gap-2 sm:shrink-0">
                     {onApprove && (
                       <ActionButton busy={busy} onClick={() => onApprove(row.id)} tone="primary">
-                        Approve
+                        {approveLabel}
                       </ActionButton>
                     )}
                     {onReject && (
                       <ActionButton busy={busy} onClick={() => onReject(row.id)}>
-                        Reject
+                        {rejectLabel}
                       </ActionButton>
                     )}
                     {onUnflag && (
@@ -333,7 +384,7 @@ function Section({
                   </div>
                 </div>
                 {failed && (
-                  <p role="alert" className="mt-3 text-xs text-red-400/90">
+                  <p className="mt-3 text-xs text-[hsl(var(--destructive-foreground))]">
                     That action failed. Try again.
                   </p>
                 )}
