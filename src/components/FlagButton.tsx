@@ -1,6 +1,7 @@
 import { Flag } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
+import { useToast } from "./Toast";
 
 type State = "idle" | "sending" | "done" | "error";
 
@@ -11,6 +12,7 @@ type State = "idle" | "sending" | "done" | "error";
  */
 export default function FlagButton({ projectId }: { projectId: string }) {
   const [state, setState] = useState<State>("idle");
+  const toast = useToast();
 
   if (!supabase) return null;
   const client = supabase;
@@ -28,6 +30,7 @@ export default function FlagButton({ projectId }: { projectId: string }) {
     } catch (err) {
       console.error("report failed", err);
       setState("error");
+      toast("Couldn't file that report. Try again.");
     }
   };
 

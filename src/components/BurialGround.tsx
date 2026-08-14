@@ -6,6 +6,7 @@ import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import SectionIntro from "./SectionIntro";
 import SectionPlate from "./SectionPlate";
 import Turnstile, { type TurnstileHandle } from "./Turnstile";
+import { useToast } from "./Toast";
 
 const LIMITS = { name: 80, epitaph: 280, stack: 120, repo: 300 };
 
@@ -75,6 +76,7 @@ export default function BurialGround() {
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof typeof EMPTY, string>>>({});
   const [status, setStatus] = useState<Status>("idle");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const toast = useToast();
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileHandle>(null);
 
@@ -103,13 +105,15 @@ export default function BurialGround() {
 
     if (turnstileEnabled && !turnstileToken) {
       setStatus("error");
-      setStatusMessage("Complete the verification check below before submitting.");
+      setStatusMessage(null);
+      toast("Complete the verification check below before submitting.");
       return;
     }
 
     if (!supabase) {
       setStatus("error");
-      setStatusMessage("Submissions aren't available right now — the backend isn't configured.");
+      setStatusMessage(null);
+      toast("Submissions aren't available right now — the backend isn't configured.");
       return;
     }
 
@@ -157,11 +161,18 @@ export default function BurialGround() {
         if (code === "validation_failed" && payload.fields) {
           setFieldErrors(payload.fields);
           setStatus("error");
-          setStatusMessage("Fix the highlighted fields and try again.");
+          setStatusMessage(null);
+          toast("Fix the highlighted fields and try again.");
+        } else if (code === "rate_limited") {
+          // Not a refusal — earlier submissions were accepted, and the copy
+          // says so. Stays inline: it is reassurance, and far too long to
+          // read inside a three-second toast.
+          setStatus("notice");
+          setStatusMessage(ERROR_MESSAGES.rate_limited);
         } else {
-          // The daily cap means earlier submissions were accepted, not refused.
-          setStatus(code === "rate_limited" ? "notice" : "error");
-          setStatusMessage(ERROR_MESSAGES[code] ?? ERROR_MESSAGES.server_error);
+          setStatus("error");
+          setStatusMessage(null);
+          toast(ERROR_MESSAGES[code] ?? ERROR_MESSAGES.server_error);
         }
         turnstileRef.current?.reset();
         setTurnstileToken(null);
@@ -177,7 +188,8 @@ export default function BurialGround() {
     } catch (err) {
       console.error("submission failed", err);
       setStatus("error");
-      setStatusMessage(ERROR_MESSAGES.network);
+      setStatusMessage(null);
+      toast(ERROR_MESSAGES.network);
       turnstileRef.current?.reset();
       setTurnstileToken(null);
     }
@@ -340,17 +352,14 @@ export default function BurialGround() {
               {submitting ? "LOWERING IT IN…" : "BURY IT"}
             </motion.button>
 
+            {/* Failures go to the toast; this only ever carries success or the rate-limit notice. */}
             {statusMessage && (
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                role={status === "error" ? "alert" : "status"}
+                role="status"
                 className={`mt-4 text-center text-sm leading-relaxed ${
-                  status === "error"
-                    ? "text-red-400/90"
-                    : status === "notice"
-                      ? "text-secondary-foreground"
-                      : "text-muted-foreground"
+                  status === "notice" ? "text-secondary-foreground" : "text-muted-foreground"
                 }`}
               >
                 {statusMessage}

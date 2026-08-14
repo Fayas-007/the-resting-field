@@ -23,6 +23,10 @@
     --muted-foreground: 0 0% 65%;
     --accent: 170 15% 45%;
     --accent-foreground: 0 0% 100%;
+    /* Oxide red, not a warning-sign red. Kept as dark and desaturated as it
+       can be while still reading as "wrong" against a monochrome site. */
+    --destructive: 2 52% 44%;
+    --destructive-foreground: 2 70% 78%;
     --border: 0 0% 20%;
     --input: 0 0% 18%;
     --ring: 0 0% 40%;
@@ -120,6 +124,85 @@
 
 .engrave {
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.08), 0 -1px 1px rgba(0, 0, 0, 0.9);
+}
+
+/* ---- Refusal slab ----
+   The error toast. Shares the stamped-metal language of the toe tag, but
+   notched on opposite corners so it reads as a torn ledger entry rather than
+   something you can carry away. Oxide red is the only other colour on the
+   site besides the verdigris of the Resurrection Chamber. */
+.grave-toast {
+  clip-path: polygon(
+    0 0,
+    calc(100% - 13px) 0,
+    100% 13px,
+    100% 100%,
+    13px 100%,
+    0 calc(100% - 13px)
+  );
+  background-image: linear-gradient(
+    148deg,
+    hsl(2 34% 19%) 0%,
+    hsl(2 28% 12%) 48%,
+    hsl(0 0% 6%) 100%
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.13), inset 0 -1px 0 rgba(0, 0, 0, 0.85),
+    0 26px 55px -22px rgba(0, 0, 0, 1);
+}
+
+/* ---- Toe tag ----
+   The claim control in the Resurrection Chamber. Deliberately not a pill:
+   every other button on the site is `rounded-full`, so the one thing you
+   can carry out of the graveyard should read as stamped metal instead.
+   Corners are clipped rather than rounded, and the string hole is a real
+   punched hole so the tag reads as a physical object. */
+.toe-tag {
+  clip-path: polygon(14px 0%, 100% 0%, 100% 100%, 14px 100%, 0% 50%);
+  background-image: linear-gradient(
+    148deg,
+    hsl(170 14% 22%) 0%,
+    hsl(170 12% 14%) 45%,
+    hsl(170 10% 9%) 100%
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), inset 0 -1px 0 rgba(0, 0, 0, 0.8),
+    0 18px 40px -22px rgba(0, 0, 0, 1);
+  transition: filter 0.35s ease, transform 0.35s ease;
+}
+
+.toe-tag:hover {
+  filter: brightness(1.35);
+  transform: translateY(-1px);
+}
+
+/* The punched hole the string would pass through. */
+.toe-tag::after {
+  content: "";
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  transform: translateY(-50%);
+  border-radius: 9999px;
+  background: hsl(0 0% 0%);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 1), 0 0 0 1px rgba(255, 255, 255, 0.09);
+  pointer-events: none;
+}
+
+/* Spent version: the project left no repo behind. Same stamped shape, all
+   the life drained out of it, and no hover — there is nothing to click. */
+.toe-tag-spent {
+  background-image: linear-gradient(
+    148deg,
+    hsl(0 0% 13%) 0%,
+    hsl(0 0% 8%) 45%,
+    hsl(0 0% 5%) 100%
+  );
+}
+
+.toe-tag-spent:hover {
+  filter: none;
+  transform: none;
 }
 
 .fog {
