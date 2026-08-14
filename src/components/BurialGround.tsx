@@ -106,7 +106,20 @@ export default function BurialGround() {
 
     const errors = validate(form);
     setFieldErrors(errors);
-    if (Object.keys(errors).length > 0) return;
+    if (Object.keys(errors).length > 0) {
+      // The form regularly runs taller than the viewport, so an error on a
+      // field below the fold — Repo URL especially, now that it's required —
+      // would otherwise leave someone staring at an unresponsive button with
+      // no visible sign of why. Field order here matches the form's layout.
+      const order: (keyof typeof errors)[] = ["name", "epitaph", "stack", "repo"];
+      const firstInvalid = order.find((key) => errors[key]);
+      if (firstInvalid) {
+        const field = document.getElementById(`bury-${firstInvalid}`);
+        field?.scrollIntoView({ block: "center" });
+        field?.focus();
+      }
+      return;
+    }
 
     if (turnstileEnabled && !turnstileToken) {
       setStatus("error");
@@ -217,8 +230,8 @@ export default function BurialGround() {
           subtext={'Give it a proper burial instead of a folder called "final_final_v3."'}
         />
 
-        <motion.div {...fadeUp(0.15)} className="mx-auto mt-16 max-w-xl">
-          <form onSubmit={handleSubmit} noValidate className="liquid-glass rounded-2xl p-8 md:p-10">
+        <motion.div {...fadeUp(0.15)} className="mx-auto mt-10 max-w-xl">
+          <form onSubmit={handleSubmit} noValidate className="liquid-glass rounded-2xl p-6 md:p-8">
             <h3 className="text-2xl font-medium tracking-[-0.5px]">Burial Record</h3>
             <p className="mt-1.5 text-sm text-muted-foreground">
               Filled in by hand, entered into the ground. A moderator reviews it before it
@@ -231,7 +244,7 @@ export default function BurialGround() {
               </p>
             )}
 
-            <div className="mt-8 space-y-5">
+            <div className="mt-6 space-y-4">
               {/* Honeypot — off-screen, unreachable by tab, invisible to a real visitor. */}
               <div aria-hidden="true" className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden">
                 <label htmlFor="bury-website">Website</label>
