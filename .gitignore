@@ -32,3 +32,6 @@ supabase/.temp/
 *.njsproj
 *.sln
 *.sw?
+
+# Local editor/tooling config
+.claude/
