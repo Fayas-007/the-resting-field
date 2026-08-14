@@ -15,8 +15,15 @@ interface PlotProps {
   plate?: Plate;
   /** Or a bespoke backdrop, for sections that need more than a still plate. */
   plateNode?: React.ReactNode;
+  /** Hands a project to the Resurrection Chamber. Omitted, the control doesn't render. */
+  onSend?: (id: string) => void;
   /** Card to render each project with. Defaults to the original casket. */
-  Card?: React.ComponentType<{ project: Project; weathered?: boolean; index?: number }>;
+  Card?: React.ComponentType<{
+    project: Project;
+    weathered?: boolean;
+    index?: number;
+    onSend?: (id: string) => void;
+  }>;
 }
 
 export default function Plot({
@@ -28,6 +35,7 @@ export default function Plot({
   weathered = false,
   plate,
   plateNode,
+  onSend,
   Card = Coffin,
 }: PlotProps) {
   return (
@@ -55,7 +63,7 @@ export default function Plot({
               key={project.id}
               className="w-full sm:w-[calc((100%-2.5rem)/2)] md:w-[calc((100%-5rem)/3)] lg:w-[calc((100%-9rem)/4)]"
             >
-              <Card project={project} weathered={weathered} index={i} />
+              <Card project={project} weathered={weathered} index={i} onSend={onSend} />
             </div>
           ))}
         </div>

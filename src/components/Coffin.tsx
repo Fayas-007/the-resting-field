@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { Project } from "../data/projects";
 import { cn } from "../lib/utils";
 import FlagButton from "./FlagButton";
+import SendToChamber from "./SendToChamber";
 
 /** Vertical casket silhouette: head, shoulders, tapering to the foot. */
 const COFFIN_CLIP = "polygon(50% 0%, 100% 17%, 88% 100%, 12% 100%, 0% 17%)";
@@ -12,9 +13,16 @@ interface CoffinProps {
   /** Old Ground caskets get the weathered grain and a longer lid hinge. */
   weathered?: boolean;
   index?: number;
+  /** Hands this project to the Resurrection Chamber. */
+  onSend?: (id: string) => void;
 }
 
-export default function Coffin({ project, weathered = false, index = 0 }: CoffinProps) {
+export default function Coffin({
+  project,
+  weathered = false,
+  index = 0,
+  onSend,
+}: CoffinProps) {
   const [open, setOpen] = useState(false);
   /*
     The reduced-motion block in index.css only silences the CSS keyframe
@@ -110,6 +118,7 @@ export default function Coffin({ project, weathered = false, index = 0 }: Coffin
               </span>
             )}
 
+            {onSend && <SendToChamber projectId={project.id} onSend={onSend} />}
             {project.source === "live" && <FlagButton projectId={project.id} />}
           </motion.div>
 

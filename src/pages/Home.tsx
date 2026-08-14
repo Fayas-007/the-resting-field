@@ -1,3 +1,4 @@
+import { useCallback, useMemo, useState } from "react";
 import Gate from "../components/Gate";
 import Plot from "../components/Plot";
 import BurialGround from "../components/BurialGround";
@@ -13,10 +14,26 @@ export default function Home() {
   const live = useApprovedProjects();
 
   // Live submissions lead (freshest first, matching the old client-only
-  // "bury" behaviour), seed data follows.
-  const main = [...live.main, ...mainCluster];
-  const old = [...live.old, ...oldGround];
-  const buried = [...main, ...old];
+  // "bury" behaviour), seed data follows. Memoised because `buried` is a
+  // dependency of the chamber's target effect — a fresh array every render
+  // would re-fire it on every render.
+  const main = useMemo(() => [...live.main, ...mainCluster], [live.main]);
+  const old = useMemo(() => [...live.old, ...oldGround], [live.old]);
+  const buried = useMemo(() => [...main, ...old], [main, old]);
+
+  /*
+    A coffin can hand its project to the Resurrection Chamber. `seq` rather
+    than a bare id: sending the *same* project twice has to re-arm the
+    chamber, and an unchanged id would look like no change at all.
+  */
+  const [chamberTarget, setChamberTarget] = useState<{ id: string; seq: number } | null>(null);
+
+  const sendToChamber = useCallback((id: string) => {
+    setChamberTarget((prev) => ({ id, seq: (prev?.seq ?? 0) + 1 }));
+    // `scroll-behavior: smooth` lives on <html>, and the reduced-motion block
+    // in index.css switches it to auto — so this inherits the right one.
+    document.getElementById("resurrection-chamber")?.scrollIntoView();
+  }, []);
 
   // Gate counter: everything in the ground, live.
   const interred = buried.length;
@@ -62,6 +79,7 @@ export default function Home() {
         projects={main}
         plateNode={<PathPlate />}
         Card={CasketCard}
+        onSend={sendToChamber}
       />
 
       <Plot
@@ -76,11 +94,12 @@ export default function Home() {
         projects={old}
         weathered
         plateNode={<OldGroundPlate />}
+        onSend={sendToChamber}
       />
 
       <BurialGround />
 
-      <ResurrectionChamber />
+      <ResurrectionChamber projects={buried} target={chamberTarget} />
 
       <Footer />
     </main>

@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import type { Project } from "../data/projects";
 import FlagButton from "./FlagButton";
+import SendToChamber from "./SendToChamber";
 
 /**
  * Main Path card.
@@ -23,6 +24,8 @@ const OPEN_CLIP = "polygon(50% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 0%)";
 interface CasketCardProps {
   project: Project;
   index?: number;
+  /** Hands this project to the Resurrection Chamber. */
+  onSend?: (id: string) => void;
 }
 
 /** Split "Node.js · Discord.js" into individual tags. */
@@ -41,7 +44,7 @@ function statusOf(project: Project) {
     : { label: `Abandoned ${year}`, warm: false };
 }
 
-export default function CasketCard({ project, index = 0 }: CasketCardProps) {
+export default function CasketCard({ project, index = 0, onSend }: CasketCardProps) {
   const [open, setOpen] = useState(false);
   const tags = toTags(project.stack);
   const status = statusOf(project);
@@ -154,6 +157,7 @@ export default function CasketCard({ project, index = 0 }: CasketCardProps) {
               </span>
             )}
 
+            {onSend && <SendToChamber projectId={project.id} onSend={onSend} />}
             {project.source === "live" && <FlagButton projectId={project.id} />}
           </div>
 
