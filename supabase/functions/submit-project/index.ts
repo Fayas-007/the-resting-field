@@ -94,6 +94,26 @@ function clientIp(req: Request): string {
   return "unknown";
 }
 
+const SITE_URL = "https://the-resting-field.vercel.app";
+
+/** Best-effort Discord ping — a failed or unconfigured webhook never blocks a submission. */
+async function notifyDiscord(name: string, epitaph: string, repoUrl: string): Promise<void> {
+  const webhookUrl = Deno.env.get("DISCORD_WEBHOOK_URL");
+  if (!webhookUrl) return;
+
+  try {
+    await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        content: `⚰️ New burial pending review: **${name}**\n${epitaph}\n${repoUrl}\n${SITE_URL}/admin`,
+      }),
+    });
+  } catch (err) {
+    console.error("discord notify failed", err);
+  }
+}
+
 async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
   const secret = Deno.env.get("TURNSTILE_SECRET_KEY");
   if (!secret) {
@@ -217,6 +237,8 @@ Deno.serve(async (req) => {
     console.error("insert failed", insertError);
     return json({ ok: false, error: "server_error" }, 500);
   }
+
+  await notifyDiscord(name, epitaph, repoUrl);
 
   return json({ ok: true });
 });
