@@ -44,11 +44,10 @@ function LoginGate({ onSignedIn }: { onSignedIn: (session: Session) => void }) {
     if (!supabase) return;
     setStatus("sending");
     try {
-      const { error: signInError } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: { emailRedirectTo: `${window.location.origin}/admin` },
+      const { error: invokeError } = await supabase.functions.invoke("admin-login", {
+        body: { email: email.trim() },
       });
-      if (signInError) throw signInError;
+      if (invokeError) throw invokeError;
       setStatus("sent");
     } catch (err) {
       console.error("magic link request failed", err);
