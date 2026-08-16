@@ -70,8 +70,10 @@ editor instead — same result.
 1. [dash.cloudflare.com](https://dash.cloudflare.com) → **Turnstile** → **Add
    site**. Any plan works, Turnstile itself is free.
 2. You'll get two keys:
-   - **Site key** → put in `.env` as `VITE_TURNSTILE_SITE_KEY` (this one is
-     public by design, safe to ship in the bundle)
+   - **Site key** → the production key is committed as a public fallback in
+     `src/lib/turnstile.ts`, and you can override it with
+     `VITE_TURNSTILE_SITE_KEY` in `.env` if you ever rotate it. This one is
+     public by design, safe to ship in the bundle.
    - **Secret key** → set as an Edge Function secret, never in `.env`:
      ```bash
      supabase secrets set TURNSTILE_SECRET_KEY=your-secret-key
@@ -95,7 +97,7 @@ committed — see below):
 ```
 VITE_SUPABASE_URL
 VITE_SUPABASE_ANON_KEY
-VITE_TURNSTILE_SITE_KEY   (optional, see step 4)
+VITE_TURNSTILE_SITE_KEY   (optional override, see step 4)
 VITE_ADMIN_EMAIL          (optional — UI copy only, see note below)
 ```
 

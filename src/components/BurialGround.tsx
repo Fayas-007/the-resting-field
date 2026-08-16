@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { fadeUp } from "../lib/animations";
 import { burialPlate } from "../data/plates";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import { TURNSTILE_SITE_KEY } from "../lib/turnstile";
 import SectionIntro from "./SectionIntro";
 import SectionPlate from "./SectionPlate";
 import Turnstile, { type TurnstileHandle } from "./Turnstile";
@@ -85,8 +86,7 @@ export default function BurialGround() {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileHandle>(null);
 
-  const siteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
-  const turnstileEnabled = Boolean(siteKey);
+  const turnstileEnabled = Boolean(TURNSTILE_SITE_KEY);
 
   const set =
     (key: keyof typeof EMPTY) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
@@ -349,11 +349,11 @@ export default function BurialGround() {
               />
             </div>
 
-            {siteKey && (
+            {TURNSTILE_SITE_KEY && (
               <div className="mt-6">
                 <Turnstile
                   ref={turnstileRef}
-                  siteKey={siteKey}
+                  siteKey={TURNSTILE_SITE_KEY}
                   onToken={setTurnstileToken}
                   onExpire={() => setTurnstileToken(null)}
                   onError={() => setTurnstileToken(null)}
